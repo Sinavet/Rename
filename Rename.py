@@ -4,7 +4,7 @@ import zipfile
 import tempfile
 from pathlib import Path
 
-st.title("🤖 Веб-бот: Переименовывает фото в каждой папке в '1'")
+st.title("🤖 Веб-бот: Переименовать фото в каждой папке в '1'")
 
 uploaded_zip = st.file_uploader("Загрузите zip-архив с папками и фото (до 100 МБ)", type="zip")
 
@@ -28,40 +28,41 @@ if uploaded_zip:
                 log = []
                 renamed = 0
                 skipped = 0
-                for folder in Path(tmpdir).rglob("*"):
-                    if folder.is_dir():
-                        photos = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in exts]
-                        if len(photos) == 1:
-                            photo = photos[0]
-                            new_name = f"1{photo.suffix.lower()}"
-                            new_path = photo.parent / new_name
-                            if new_path.exists():
-                                log.append(f"{photo}: Файл 1{photo.suffix.lower()} уже существует, пропущено.")
-                                skipped += 1
-                            else:
-                                photo.rename(new_path)
-                                log.append(f"{photo} → {new_path}")
-                                renamed += 1
-                        elif len(photos) > 1:
-                            log.append(f"{folder}: В папке больше одной фотки, ничего не переименовано.")
+                folders = [f for f in Path(tmpdir).rglob("*") if f.is_dir()]
+                progress_bar = st.progress(0, text="Папки обработаны: 0/")
+                for i, folder in enumerate(folders):
+                    photos = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in exts]
+                    if len(photos) == 1:
+                        photo = photos[0]
+                        new_name = f"1{photo.suffix.lower()}"
+                        new_path = photo.parent / new_name
+                        if new_path.exists():
+                            log.append(f"{photo}: Файл 1{photo.suffix.lower()} уже существует, пропущено.")
                             skipped += 1
                         else:
-                            log.append(f"{folder}: Нет фото для переименования.")
-                            skipped += 1
+                            photo.rename(new_path)
+                            log.append(f"{photo} → {new_path}")
+                            renamed += 1
+                    elif len(photos) > 1:
+                        log.append(f"{folder}: В папке больше одной фотки, ничего не переименовано.")
+                        skipped += 1
+                    else:
+                        log.append(f"{folder}: Нет фото для переименования.")
+                        skipped += 1
+                    progress_bar.progress((i+1)/len(folders), text=f"Папки обработаны: {i+1}/{len(folders)}")
 
                 result_zip_path = os.path.join(tmpdir, "renamed_photos.zip")
                 with zipfile.ZipFile(result_zip_path, "w") as zipf:
                     for file in Path(tmpdir).rglob("*"):
-                        if file.is_file():
+                        if file.is_file() and file.name != "input.zip":
                             zipf.write(file, arcname=file.relative_to(tmpdir))
 
                 st.success(f"Переименование завершено! Переименовано: {renamed}, пропущено: {skipped}")
 
-                # Кнопка скачивания
                 with open(result_zip_path, "rb") as f:
                     st.download_button(
                         label="Скачать архив с результатом",
-                        data=f,
+                        data=f.read(),
                         file_name="renamed_photos.zip",
                         mime="application/zip"
                     )
