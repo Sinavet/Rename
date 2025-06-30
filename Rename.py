@@ -3,6 +3,7 @@ import os
 import zipfile
 import tempfile
 from pathlib import Path
+import shutil
 
 # --- Инициализация состояния сессии ---
 # Это нужно, чтобы хранить результаты между действиями пользователя
@@ -89,11 +90,14 @@ else:
                         if len(extracted_items) == 1 and extracted_items[0].is_dir():
                             zip_root = extracted_items[0]
 
+                        # Используем shutil.make_archive для корректного сохранения всей структуры, включая пустые папки
+                        archive_base_name = path_tmpdir / "renamed_photos"
+                        shutil.make_archive(
+                            base_name=str(archive_base_name),
+                            format='zip',
+                            root_dir=str(zip_root)
+                        )
                         result_zip_path = path_tmpdir / "renamed_photos.zip"
-                        with zipfile.ZipFile(result_zip_path, "w") as zipf:
-                            for file in zip_root.rglob("*"):
-                                if file.is_file():
-                                    zipf.write(file, arcname=file.relative_to(zip_root))
                         
                         with open(result_zip_path, "rb") as f:
                             st.session_state.result_zip_data = f.read()
