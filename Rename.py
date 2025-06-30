@@ -37,17 +37,17 @@ if uploaded_zip:
                         new_name = f"1{photo.suffix.lower()}"
                         new_path = photo.parent / new_name
                         if new_path.exists():
-                            log.append(f"{photo}: Файл 1{photo.suffix.lower()} уже существует, пропущено.")
+                            log.append(f"{i+1}. {photo.name} в '{folder.name}': Файл {new_name} уже существует, пропущено.")
                             skipped += 1
                         else:
                             photo.rename(new_path)
-                            log.append(f"{photo} → {new_path}")
+                            log.append(f"{i+1}. {photo.name} в '{folder.name}': Переименовано в {new_name}")
                             renamed += 1
                     elif len(photos) > 1:
-                        log.append(f"{folder}: В папке больше одной фотки, ничего не переименовано.")
+                        log.append(f"{i+1}. '{folder.name}': В папке больше одной фотки, ничего не переименовано.")
                         skipped += 1
                     else:
-                        log.append(f"{folder}: Нет фото для переименования.")
+                        log.append(f"{i+1}. '{folder.name}': Нет фото для переименования.")
                         skipped += 1
                     progress_bar.progress((i+1)/len(folders), text=f"Папки обработаны: {i+1}/{len(folders)}")
 
@@ -66,4 +66,4 @@ if uploaded_zip:
                         file_name="renamed_photos.zip",
                         mime="application/zip"
                     )
-                st.text_area("Лог переименования:", "\n".join(log), height=300)
+                st.text_area("Лог переименования:", "\n".join(log), height=400)
