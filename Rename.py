@@ -32,22 +32,25 @@ if uploaded_zip:
                 progress_bar = st.progress(0, text="Папки обработаны: 0/")
                 for i, folder in enumerate(folders):
                     photos = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in exts]
+                    relative_folder_path = folder.relative_to(tmpdir)
                     if len(photos) == 1:
                         photo = photos[0]
                         new_name = f"1{photo.suffix.lower()}"
                         new_path = photo.parent / new_name
+                        relative_photo_path = photo.relative_to(tmpdir)
+                        relative_new_path = new_path.relative_to(tmpdir)
                         if new_path.exists():
-                            log.append(f"{i+1}. {photo.name} в '{folder.name}': Файл {new_name} уже существует, пропущено.")
+                            log.append(f"{i+1}. Пропущено: Файл '{relative_new_path}' уже существует.")
                             skipped += 1
                         else:
                             photo.rename(new_path)
-                            log.append(f"{i+1}. {photo.name} в '{folder.name}': Переименовано в {new_name}")
+                            log.append(f"{i+1}. Переименовано: '{relative_photo_path}' -> '{relative_new_path}'")
                             renamed += 1
                     elif len(photos) > 1:
-                        log.append(f"{i+1}. '{folder.name}': В папке больше одной фотки, ничего не переименовано.")
+                        log.append(f"{i+1}. Пропущено: В папке '{relative_folder_path}' несколько фото.")
                         skipped += 1
                     else:
-                        log.append(f"{i+1}. '{folder.name}': Нет фото для переименования.")
+                        log.append(f"{i+1}. Инфо: В папке '{relative_folder_path}' нет фото.")
                         skipped += 1
                     progress_bar.progress((i+1)/len(folders), text=f"Папки обработаны: {i+1}/{len(folders)}")
 
