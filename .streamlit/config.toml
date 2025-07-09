@@ -1,2 +1,1 @@
 max_size_mb = 300
-supported_exts = [".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".heic", ".heif"]
