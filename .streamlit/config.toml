@@ -1,1 +1,2 @@
-max_size_mb = 300
+[server]
+maxUploadSize = 300
