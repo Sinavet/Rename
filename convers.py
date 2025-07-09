@@ -12,12 +12,12 @@ from utils import filter_large_files, SUPPORTED_EXTS
 def process_convert_mode(uploaded_files, scale_percent=100):
     uploaded_files = filter_large_files(uploaded_files)
     if uploaded_files and st.button("Обработать и скачать архив", key="process_convert_btn"):
-        st.subheader('Обработка изображений...')
         with tempfile.TemporaryDirectory() as temp_dir:
             all_images = []
             log = []
-            st.write("[DEBUG] Старт process_convert_mode")
-            # --- Сбор всех файлов ---
+            st.markdown("""
+                <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>⏳ Шаг 1: Сбор файлов</div>
+            """, unsafe_allow_html=True)
             for uploaded in uploaded_files:
                 if uploaded.name.lower().endswith(".zip"):
                     zip_temp = os.path.join(temp_dir, uploaded.name)
@@ -40,7 +40,7 @@ def process_convert_mode(uploaded_files, scale_percent=100):
                     log.append(f"🖼️ Файл {uploaded.name}: добавлен.")
                 else:
                     log.append(f"❌ {uploaded.name}: не поддерживается.")
-            st.write(f"[DEBUG] Всего файлов для обработки: {len(all_images)}")
+            st.markdown(f"<div style='margin-bottom:1em;'>🔍 Найдено <b>{len(all_images)}</b> изображений для обработки.</div>", unsafe_allow_html=True)
             if not all_images:
                 st.error("Не найдено ни одного поддерживаемого изображения.")
                 # Создаём пустой архив с логом ошибок
@@ -56,7 +56,11 @@ def process_convert_mode(uploaded_files, scale_percent=100):
             else:
                 converted_files = []
                 errors = 0
-                progress_bar = st.progress(0, text="Файлы...")
+                st.markdown("""
+                    <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>🛠️ Шаг 2: Конвертация изображений</div>
+                """, unsafe_allow_html=True)
+                progress_bar = st.progress(0)
+                status_placeholder = st.empty()
                 for i, img_path in enumerate(all_images, 1):
                     rel_path = img_path.relative_to(temp_dir)
                     out_path = os.path.join(temp_dir, str(rel_path.with_suffix('.jpg')))
@@ -78,10 +82,13 @@ def process_convert_mode(uploaded_files, scale_percent=100):
                     except Exception as e:
                         log.append(f"❌ {rel_path}: ошибка конвертации ({e})")
                         errors += 1
-                    progress_bar.progress(i / len(all_images), text=f"Обработано файлов: {i}/{len(all_images)}")
-                st.write("[DEBUG] Начинаю архивацию результата...")
+                    progress_bar.progress(i / len(all_images))
+                    status_placeholder.markdown(f"<span style='color:#4a90e2;'>Обработано файлов: <b>{i}/{len(all_images)}</b></span>", unsafe_allow_html=True)
+                st.markdown("""
+                    <div style='font-size:1.3em;font-weight:600;margin:1em 0 0.5em 0;'>📦 Шаг 3: Архивация результата</div>
+                """, unsafe_allow_html=True)
                 if converted_files:
-                    st.write(f"[DEBUG] files_to_zip: {[src for src, rel in converted_files]}")
+                    st.success(f"✅ Успешно конвертировано: {len(converted_files)} из {len(all_images)} файлов.")
                     result_zip = os.path.join(temp_dir, "result_convert.zip")
                     with zipfile.ZipFile(result_zip, "w") as zipf:
                         for src, rel in converted_files:
@@ -95,9 +102,8 @@ def process_convert_mode(uploaded_files, scale_percent=100):
                         "errors": errors
                     }
                     st.session_state["log"] = log
-                    st.write("[DEBUG] Архивация завершена, архив сохранён в session_state")
                 else:
-                    st.error("Не удалось конвертировать ни одного изображения.")
+                    st.error("❌ Не удалось конвертировать ни одного изображения.")
                     # Создаём архив только с логом ошибок
                     result_zip = os.path.join(temp_dir, "result_convert.zip")
                     with zipfile.ZipFile(result_zip, "w") as zipf:
@@ -108,4 +114,6 @@ def process_convert_mode(uploaded_files, scale_percent=100):
                     st.session_state["result_zip"] = result_zip # Записываю архив в session_state
                     st.session_state["stats"] = {"total": len(all_images), "converted": 0, "errors": errors}
                     st.session_state["log"] = log
-                st.write("[DEBUG] Архивация завершена, архив сохранён в session_state")
+                if errors > 0:
+                    with st.expander("Показать подробный лог ошибок", expanded=False):
+                        st.text_area("Лог:", value="\n".join(log), height=300, disabled=True)
