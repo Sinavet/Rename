@@ -237,24 +237,38 @@ scale_percent = st.sidebar.slider(
     help="Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию."
 )
 st.sidebar.caption("Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию.")
-# Предпросмотр итогового размера (примерно)
+
+# Оценка примерного размера для всех файлов
 if uploaded_files:
     try:
         from io import BytesIO
-        file = next((f for f in uploaded_files if f.name.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".heic", ".heif"))), None)
-        if file:
-            file.seek(0)
-            img = Image.open(file)
-            orig_size = file.size if hasattr(file, 'size') else file.getbuffer().nbytes if hasattr(file, 'getbuffer') else None
-            w, h = img.size
-            new_w = int(w * scale_percent / 100)
-            new_h = int(h * scale_percent / 100)
-            img_resized = img.resize((new_w, new_h), RESAMPLING)
-            buf = BytesIO()
-            img_resized = img_resized.convert("RGB")
-            img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
-            approx_size = buf.tell()
-            st.sidebar.info(f"Примерный размер после сжатия: {approx_size//1024} КБ (было: {orig_size//1024 if orig_size else '?'} КБ)")
+        total_approx = 0
+        total_orig = 0
+        count = 0
+        for file in uploaded_files:
+            if file.name.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".heic", ".heif")):
+                try:
+                    file.seek(0)
+                    img = Image.open(file)
+                    orig_size = file.size if hasattr(file, 'size') else file.getbuffer().nbytes if hasattr(file, 'getbuffer') else None
+                    w, h = img.size
+                    new_w = int(w * scale_percent / 100)
+                    new_h = int(h * scale_percent / 100)
+                    img_resized = img.resize((new_w, new_h), RESAMPLING)
+                    img_resized = img_resized.convert("RGB")
+                    buf = BytesIO()
+                    img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
+                    approx_size = buf.tell()
+                    total_approx += approx_size
+                    total_orig += orig_size if orig_size else 0
+                    count += 1
+                except Exception:
+                    continue
+        if count > 0:
+            st.sidebar.info(f"Примерный общий размер после сжатия: {total_approx//1024} КБ (было: {total_orig//1024 if total_orig else '?'} КБ, файлов: {count})")
+            st.sidebar.caption("Показан суммарный примерный размер всех изображений после сжатия. Итоговый размер архива может отличаться из-за структуры, логов и особенностей ZIP.")
+        else:
+            st.sidebar.caption("Не удалось рассчитать размер: неподдерживаемый формат или ошибка чтения.")
     except Exception as e:
         st.sidebar.warning(f"Не удалось рассчитать размер: {e}")
 
