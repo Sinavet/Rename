@@ -10,12 +10,12 @@ from utils import filter_large_files, SUPPORTED_EXTS
 def process_rename_mode(uploaded_files):
     uploaded_files = filter_large_files(uploaded_files)
     if uploaded_files and st.button("Обработать и скачать архив", key="process_rename_btn"):
-        st.subheader('Обработка изображений...')
         with tempfile.TemporaryDirectory() as temp_dir:
             all_images = []
             log = []
-            st.write("[DEBUG] Старт process_rename_mode")
-            # --- Сбор всех файлов ---
+            st.markdown("""
+                <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>⏳ Шаг 1: Сбор файлов</div>
+            """, unsafe_allow_html=True)
             for uploaded in uploaded_files:
                 if uploaded.name.lower().endswith(".zip"):
                     zip_temp = os.path.join(temp_dir, uploaded.name)
@@ -42,7 +42,7 @@ def process_rename_mode(uploaded_files):
                     log.append(f"🖼️ Файл {uploaded.name}: добавлен.")
                 else:
                     log.append(f"❌ {uploaded.name}: не поддерживается.")
-            st.write(f"[DEBUG] Всего файлов для обработки: {len(all_images)}")
+            st.markdown(f"<div style='margin-bottom:1em;'>🔍 Найдено <b>{len(all_images)}</b> изображений для обработки.</div>", unsafe_allow_html=True)
             if not all_images:
                 st.error("Не найдено ни одного поддерживаемого изображения.")
                 # Создаём пустой архив с логом ошибок
@@ -61,7 +61,11 @@ def process_rename_mode(uploaded_files):
                 skipped = 0
                 folders = sorted({img.parent for img in all_images})
                 if len(folders) > 0:
-                    progress_bar = st.progress(0, text="Папки...")
+                    st.markdown("""
+                        <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>🛠️ Шаг 2: Переименование файлов</div>
+                    """, unsafe_allow_html=True)
+                    progress_bar = st.progress(0)
+                    status_placeholder = st.empty()
                     for i, folder in enumerate(folders, 1):
                         photos = [f for f in folder.iterdir() if f.is_file() and f.suffix.lower() in exts]
                         photos_sorted = sorted(photos, key=lambda x: x.name)
@@ -83,7 +87,11 @@ def process_rename_mode(uploaded_files):
                             log.append(f"Инфо: В папке '{relative_folder_path}' нет фото.")
                             skipped += 1
                         progress = min(i / len(folders), 1.0)
-                        progress_bar.progress(progress, text=f"Обработано папок: {i}/{len(folders)}")
+                        progress_bar.progress(progress)
+                        status_placeholder.markdown(f"<span style='color:#4a90e2;'>Обработано папок: <b>{i}/{len(folders)}</b></span>", unsafe_allow_html=True)
+                st.markdown("""
+                    <div style='font-size:1.3em;font-weight:600;margin:1em 0 0.5em 0;'>📦 Шаг 3: Архивация результата</div>
+                """, unsafe_allow_html=True)
                 # Архивация результата
                 extracted_items = [p for p in Path(temp_dir).iterdir() if p.name != uploaded_files[0].name]
                 zip_root = Path(temp_dir)
@@ -123,3 +131,7 @@ def process_rename_mode(uploaded_files):
                     st.session_state["result_zip"] = None # Теперь только обработка и запись в session_state
                     st.session_state["stats"] = {"total": len(all_images), "renamed": renamed, "skipped": skipped}
                     st.session_state["log"] = log
+                st.success(f"✅ Успешно переименовано: {renamed} файлов. Пропущено: {skipped}.")
+                if skipped > 0:
+                    with st.expander("Показать подробный лог", expanded=False):
+                        st.text_area("Лог:", value="\n".join(log), height=300, disabled=True)
