@@ -4,11 +4,12 @@ import zipfile
 import tempfile
 from pathlib import Path
 from PIL import Image
+RESAMPLING = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', getattr(Image, 'LANCZOS', getattr(Image, 'NEAREST', 0)))
 import streamlit as st
 from utils import filter_large_files, SUPPORTED_EXTS
 
 
-def process_convert_mode(uploaded_files):
+def process_convert_mode(uploaded_files, scale_percent=100):
     uploaded_files = filter_large_files(uploaded_files)
     if uploaded_files and st.button("Обработать и скачать архив", key="process_convert_btn"):
         st.subheader('Обработка изображений...')
@@ -65,6 +66,12 @@ def process_convert_mode(uploaded_files):
                         img = Image.open(img_path)
                         icc_profile = img.info.get('icc_profile')
                         img = img.convert("RGB")
+                        # Изменение разрешения
+                        if scale_percent != 100:
+                            w, h = img.size
+                            new_w = max(1, int(w * scale_percent / 100))
+                            new_h = max(1, int(h * scale_percent / 100))
+                            img = img.resize((new_w, new_h), RESAMPLING)
                         img.save(out_path, "JPEG", quality=100, optimize=True, progressive=True, icc_profile=icc_profile)
                         converted_files.append((out_path, rel_path.with_suffix('.jpg')))
                         log.append(f"✅ {rel_path} → {rel_path.with_suffix('.jpg')}")
