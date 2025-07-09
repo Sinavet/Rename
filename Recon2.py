@@ -18,7 +18,7 @@ import uuid
 from rename import process_rename_mode
 from convers import process_convert_mode
 from water import process_watermark_mode
-from utils import filter_large_files, SUPPORTED_EXTS
+from utils import filter_large_files, SUPPORTED_EXTS, MAX_SIZE_MB
 
 # Универсальный ресемплинг для предпросмотра
 from PIL import Image
@@ -143,7 +143,7 @@ st.markdown(
 )
 
 uploaded_files = st.file_uploader(
-    "Загрузите изображения или архив (до 300 МБ, поддерживаются JPG, PNG, HEIC, ZIP и др.)",
+    f"Загрузите изображения или архив (до {MAX_SIZE_MB} МБ, поддерживаются JPG, PNG, HEIC, ZIP и др.)",
     type=["jpg", "jpeg", "png", "bmp", "webp", "tiff", "heic", "heif", "zip"],
     accept_multiple_files=True,
     key=st.session_state["reset_uploader"]
