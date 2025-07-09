@@ -21,7 +21,9 @@ from convers import process_convert_mode
 from water import process_watermark_mode
 from utils import filter_large_files, SUPPORTED_EXTS
 
-pillow_heif.register_heif_opener()
+# Универсальный ресемплинг для предпросмотра
+from PIL import Image
+RESAMPLING = getattr(getattr(Image, 'Resampling', Image), 'LANCZOS', getattr(Image, 'LANCZOS', getattr(Image, 'NEAREST', 0)))
 
 st.set_page_config(page_title="PhotoFlow: Умная обработка изображений", page_icon="📸")
 st.markdown("""
@@ -235,7 +237,7 @@ elif mode == "Конвертация в JPG":
                 w, h = img.size
                 new_w = int(w * scale_percent / 100)
                 new_h = int(h * scale_percent / 100)
-                img_resized = img.resize((new_w, new_h), Image.LANCZOS)
+                img_resized = img.resize((new_w, new_h), RESAMPLING)
                 buf = BytesIO()
                 img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
                 approx_size = buf.tell()
