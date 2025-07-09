@@ -1,0 +1,8 @@
+streamlit
+pillow
+# pillow-heif нужен только для поддержки HEIC/HEIF, опционально:
+# pillow-heif
+requests
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
