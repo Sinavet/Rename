@@ -251,6 +251,7 @@ if uploaded_files:
             new_h = int(h * scale_percent / 100)
             img_resized = img.resize((new_w, new_h), RESAMPLING)
             buf = BytesIO()
+            img_resized = img_resized.convert("RGB")
             img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
             approx_size = buf.tell()
             st.sidebar.info(f"Примерный размер после сжатия: {approx_size//1024} КБ (было: {orig_size//1024 if orig_size else '?'} КБ)")
