@@ -92,7 +92,7 @@ def apply_watermark(
     out.alpha_composite(wm, dest=pos)
     return out.convert("RGB")
 
-def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_path, watermark_dir, pos_map, opacity, size_percent, position):
+def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_path, watermark_dir, pos_map, opacity, size_percent, position, scale_percent=100):
     uploaded_files = filter_large_files(uploaded_files)
     if uploaded_files and (preset_choice != "Нет" or user_wm_file):
         if st.button("Обработать и скачать архив", key="process_archive_btn"):
@@ -169,6 +169,12 @@ def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_
                                     opacity=opacity,
                                     scale=size_percent/100.0
                                 )
+                                # resize если нужно
+                                if scale_percent != 100:
+                                    w, h = processed_img.size
+                                    new_w = max(1, int(w * scale_percent / 100))
+                                    new_h = max(1, int(h * scale_percent / 100))
+                                    processed_img = processed_img.resize((new_w, new_h), Image.LANCZOS)
                                 processed_img.save(out_path, "JPEG", quality=100, optimize=True, progressive=True)
                                 processed_files.append((out_path, rel_path.with_suffix('.jpg')))
                                 log.append(f"✅ {rel_path} → {rel_path.with_suffix('.jpg')} (время: {time.time() - start_time:.2f} сек)")
