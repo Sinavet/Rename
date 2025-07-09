@@ -7,7 +7,7 @@ from PIL import Image
 import streamlit as st
 from utils import filter_large_files, SUPPORTED_EXTS
 
-def process_rename_mode(uploaded_files):
+def process_rename_mode(uploaded_files, scale_percent=100):
     uploaded_files = filter_large_files(uploaded_files)
     if uploaded_files and st.button("Обработать и скачать архив", key="process_rename_btn"):
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -80,6 +80,23 @@ def process_rename_mode(uploaded_files):
                                     log.append(f"Пропущено: Файл '{relative_new_path}' уже существует.")
                                     skipped += 1
                                 else:
+                                    # resize только для JPG/JPEG
+                                    if photo.suffix.lower() in ['.jpg', '.jpeg'] and scale_percent != 100:
+                                        try:
+                                            img = Image.open(photo)
+                                            w, h = img.size
+                                            new_w = max(1, int(w * scale_percent / 100))
+                                            new_h = max(1, int(h * scale_percent / 100))
+                                            img = img.resize((new_w, new_h), Image.LANCZOS)
+                                            img.save(new_path, "JPEG", quality=100, optimize=True, progressive=True)
+                                            photo.unlink()  # удалить оригинал
+                                            log.append(f"Переименовано и изменено разрешение: '{relative_photo_path}' -> '{relative_new_path}'")
+                                            renamed += 1
+                                            continue
+                                        except Exception as e:
+                                            log.append(f"Ошибка изменения разрешения для '{relative_photo_path}': {e}")
+                                            skipped += 1
+                                            continue
                                     photo.rename(new_path)
                                     log.append(f"Переименовано: '{relative_photo_path}' -> '{relative_new_path}'")
                                     renamed += 1
