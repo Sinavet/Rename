@@ -8,7 +8,6 @@ try:
     import pillow_heif
     pillow_heif.register_heif_opener()
     HEIF_SUPPORT = True
-    st.write("[INFO] pillow-heif успешно загружен, поддержка HEIC/HEIF активна.")
 except ImportError:
     HEIF_SUPPORT = False
     st.warning("Для поддержки HEIC/HEIF установите пакет pillow-heif: pip install pillow-heif")
@@ -76,8 +75,10 @@ st.markdown("""
     }
 </style>
 """, unsafe_allow_html=True)
-st.markdown("<div class='big-title'>PhotoFlow: Умная обработка изображений</div>", unsafe_allow_html=True)
-st.markdown("<div class='subtitle'>Быстрое и простое преобразование, переименование и защита ваших фото</div>", unsafe_allow_html=True)
+
+with st.expander("📸 PhotoFlow: Умная обработка изображений", expanded=False):
+    st.markdown("<div class='big-title'>PhotoFlow: Умная обработка изображений</div>", unsafe_allow_html=True)
+    st.markdown("<div class='subtitle'>Быстрое и простое преобразование, переименование и защита ваших фото</div>", unsafe_allow_html=True)
 
 with st.expander("ℹ️ Инструкция и ответы на вопросы", expanded=True):
     st.markdown("""
@@ -281,7 +282,7 @@ if st.session_state.get("result_zip"):
         )
         st.text_area("Лог:", value="\n".join(st.session_state["log"]), height=300, disabled=True)
 else:
-    st.error("❌ Архив не создан. Проверьте формат файлов или попробуйте снова.")
+    st.info("ℹ️ Архив пока не создан. Загрузите изображения и нажмите кнопку обработки.")
 
 if st.button("🔄 Начать сначала", type="primary"):
     reset_all()
