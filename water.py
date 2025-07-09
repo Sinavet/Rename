@@ -97,11 +97,12 @@ def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_
     if uploaded_files and (preset_choice != "Нет" or user_wm_file):
         if st.button("Обработать и скачать архив", key="process_archive_btn"):
             import time
-            st.subheader('Обработка изображений...')
             with tempfile.TemporaryDirectory() as temp_dir:
                 all_images = []
                 log = []
-                # --- Сбор всех файлов ---
+                st.markdown("""
+                    <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>⏳ Шаг 1: Сбор файлов</div>
+                """, unsafe_allow_html=True)
                 for uploaded in uploaded_files:
                     if uploaded.name.lower().endswith(".zip"):
                         zip_temp = os.path.join(temp_dir, uploaded.name)
@@ -124,6 +125,7 @@ def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_
                         log.append(f"🖼️ Файл {uploaded.name}: добавлен.")
                     else:
                         log.append(f"❌ {uploaded.name}: не поддерживается.")
+                st.markdown(f"<div style='margin-bottom:1em;'>🔍 Найдено <b>{len(all_images)}</b> изображений для обработки.</div>", unsafe_allow_html=True)
                 if not all_images:
                     st.error("Не найдено ни одного поддерживаемого изображения.")
                     # Создаём пустой архив с логом ошибок
@@ -147,7 +149,11 @@ def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_
                     processed_files = []
                     errors = 0
                     if watermark_path:
-                        progress_bar = st.progress(0, text="Файлы...")
+                        st.markdown("""
+                            <div style='font-size:1.3em;font-weight:600;margin-bottom:0.5em;'>🛠️ Шаг 2: Наложение водяного знака</div>
+                        """, unsafe_allow_html=True)
+                        progress_bar = st.progress(0)
+                        status_placeholder = st.empty()
                         for i, img_path in enumerate(all_images, 1):
                             rel_path = img_path.relative_to(temp_dir)
                             out_path = os.path.join(temp_dir, str(rel_path.with_suffix('.jpg')))
@@ -170,7 +176,11 @@ def process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_
                                 log.append(f"❌ {rel_path}: ошибка обработки водяного знака ({e}) (время: {time.time() - start_time:.2f} сек)")
                                 st.error(f"Ошибка при обработке {rel_path}: {e}")
                                 errors += 1
-                            progress_bar.progress(i / len(all_images), text=f"Обработано файлов: {i}/{len(all_images)}")
+                            progress_bar.progress(i / len(all_images))
+                            status_placeholder.markdown(f"<span style='color:#4a90e2;'>Обработано файлов: <b>{i}/{len(all_images)}</b></span>", unsafe_allow_html=True)
+                        st.markdown("""
+                            <div style='font-size:1.3em;font-weight:600;margin:1em 0 0.5em 0;'>📦 Шаг 3: Архивация результата</div>
+                        """, unsafe_allow_html=True)
                         # Архивация только обработанных файлов
                         files_to_zip = [Path(out_path) for out_path, _ in processed_files]
                         log_path = os.path.join(temp_dir, "log.txt")
