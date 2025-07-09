@@ -229,39 +229,40 @@ if mode == "Водяной знак":
     except Exception as e:
         st.warning(f"Ошибка предпросмотра: {e}")
 
-# --- Кнопка обработки для режима Переименование фото ---
+# Масштаб JPG для всех режимов
+st.sidebar.markdown("**Масштаб JPG (разрешение):**")
+scale_percent = st.sidebar.slider(
+    "Масштабировать изображения (%)",
+    min_value=10, max_value=100, value=100, step=5,
+    help="Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию."
+)
+st.sidebar.caption("Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию.")
+# Предпросмотр итогового размера (примерно)
+if uploaded_files:
+    try:
+        from io import BytesIO
+        file = next((f for f in uploaded_files if f.name.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".heic", ".heif"))), None)
+        if file:
+            file.seek(0)
+            img = Image.open(file)
+            orig_size = file.size if hasattr(file, 'size') else file.getbuffer().nbytes if hasattr(file, 'getbuffer') else None
+            w, h = img.size
+            new_w = int(w * scale_percent / 100)
+            new_h = int(h * scale_percent / 100)
+            img_resized = img.resize((new_w, new_h), RESAMPLING)
+            buf = BytesIO()
+            img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
+            approx_size = buf.tell()
+            st.sidebar.info(f"Примерный размер после сжатия: {approx_size//1024} КБ (было: {orig_size//1024 if orig_size else '?'} КБ)")
+    except Exception as e:
+        st.sidebar.warning(f"Не удалось рассчитать размер: {e}")
+
 if mode == "Переименование фото":
-    process_rename_mode(uploaded_files)
+    process_rename_mode(uploaded_files, scale_percent)
 elif mode == "Конвертация в JPG":
-    st.sidebar.markdown("**Масштаб JPG (разрешение):**")
-    scale_percent = st.sidebar.slider(
-        "Масштабировать изображения (%)",
-        min_value=10, max_value=100, value=100, step=5,
-        help="Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию."
-    )
-    st.sidebar.caption("Уменьшение разрешения уменьшает размер файла, но может ухудшить детализацию.")
-    # Предпросмотр итогового размера (примерно)
-    if uploaded_files:
-        try:
-            from io import BytesIO
-            file = next((f for f in uploaded_files if f.name.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tiff", ".heic", ".heif"))), None)
-            if file:
-                file.seek(0)
-                img = Image.open(file)
-                orig_size = file.size if hasattr(file, 'size') else file.getbuffer().nbytes if hasattr(file, 'getbuffer') else None
-                w, h = img.size
-                new_w = int(w * scale_percent / 100)
-                new_h = int(h * scale_percent / 100)
-                img_resized = img.resize((new_w, new_h), RESAMPLING)
-                buf = BytesIO()
-                img_resized.save(buf, format="JPEG", quality=90, optimize=True, progressive=True)
-                approx_size = buf.tell()
-                st.sidebar.info(f"Примерный размер после сжатия: {approx_size//1024} КБ (было: {orig_size//1024 if orig_size else '?'} КБ)")
-        except Exception as e:
-            st.sidebar.warning(f"Не удалось рассчитать размер: {e}")
     process_convert_mode(uploaded_files, scale_percent)
 elif mode == "Водяной знак":
-    process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_path, watermark_dir, pos_map, opacity, size_percent, position)
+    process_watermark_mode(uploaded_files, preset_choice, user_wm_file, user_wm_path, watermark_dir, pos_map, opacity, size_percent, position, scale_percent)
 
 # Универсальный блок скачивания архива и лога для всех режимов
 if st.session_state.get("result_zip"):
